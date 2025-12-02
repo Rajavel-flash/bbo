@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ASCII RPG — Letters & Numbers Adventure</title>
+<title>ASCII RPG — PNG Character Adventure</title>
 <style>
   :root{--bg:#0b1220;--panel:#0f1724;--muted:#94a3b8;--accent:#60a5fa;--danger:#fb7185}
   *{box-sizing:border-box}
@@ -12,14 +12,11 @@
   .header{display:flex;justify-content:space-between;align-items:center;gap:12px}
   h1{font-size:18px;margin:0}
   .layout{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-top:12px}
-  .board{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:10px;min-height:540px;display:grid;align-items:start}
+  .board{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:10px;min-height:540px;position:relative}
   .grid{display:grid;grid-template-columns:repeat(20,28px);grid-auto-rows:28px;gap:2px;justify-content:center}
-  .cell{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:4px;font-weight:700}
+  .cell{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:4px;font-weight:700;position:relative}
   .cell.floor{background:rgba(255,255,255,0.01)}
-  .cell.wall{background:rgba(255,255,255,0.03);color:#7c8ea3}
-  .cell.player{color:var(--accent)}
-  .cell.enemy{color:var(--danger)}
-  .cell.item{color:#34d399}
+  .cell.wall{background:rgba(255,255,255,0.03)}
   .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:10px}
   .stats{display:flex;flex-direction:column;gap:8px}
   .bar{height:10px;background:rgba(255,255,255,0.03);border-radius:6px;overflow:hidden}
@@ -27,25 +24,34 @@
   .buttons{display:flex;gap:8px;margin-top:8px}
   button{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 10px;border-radius:8px}
   button.primary{background:linear-gradient(90deg,#60a5fa,#7dd3fc);color:#02101a;border:none}
-  .log{height:200px;overflow:auto;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px;font-size:13px}
+  .log{height:120px;overflow:auto;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px;font-size:13px}
   .help{font-size:13px;color:var(--muted);margin-top:10px}
+  .tutorial{font-size:13px;color:var(--muted);margin-bottom:10px}
+  .char-img{width:24px;height:24px;object-fit:contain;}
   footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
-  @media(max-width:980px){.layout{grid-template-columns:1fr}.grid{transform:scale(0.9);transform-origin:center}}
 </style>
 </head>
 <body>
   <div class="app">
     <div class="header">
-      <h1>ASCII RPG — Letters & Numbers Adventure</h1>
-      <div style="text-align:right;color:var(--muted)">Move: Arrow keys / WASD • Attack: Space</div>
+      <h1>PNG RPG — Character Adventure</h1>
+      <div style="text-align:right;color:var(--muted)">Move: Arrow keys / WASD • Attack: Space • Special: 1,2,3</div>
     </div>
 
     <div class="layout">
-      <div class="board panel">
-        <div id="grid" class="grid" aria-live="polite"></div>
-      </div>
-
       <aside class="panel">
+        <div class="tutorial">
+          <strong>Tutorial</strong>
+          <ul>
+            <li>Arrow keys / WASD: Move</li>
+            <li>Space: Attack adjacent enemy</li>
+            <li>1: Poison attack</li>
+            <li>2: Fire attack</li>
+            <li>3: Stun attack</li>
+            <li>Collect $ for gold, + for healing</li>
+            <li>Level up to increase HP & attack</li>
+          </ul>
+        </div>
         <div class="stats">
           <div><strong>Player</strong> <span id="playerChar">A</span></div>
           <div>Level: <span id="level">1</span></div>
@@ -55,269 +61,79 @@
           <div class="bar"><i id="xpBar" style="width:0%"></i></div>
           <div>Gold: <span id="gold">0</span></div>
         </div>
-
         <div class="buttons">
           <button id="newBtn" class="primary">New Game</button>
           <button id="saveBtn">Save</button>
           <button id="loadBtn">Load</button>
         </div>
-
         <hr style="margin:10px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
         <div><strong>Legend</strong></div>
-        <div class="help">Player: letter you choose • Enemies: numbers • Items: $ (gold) &amp; + (healing)</div>
-
+        <div class="help">Player: PNG icon • Enemies: PNG numbers • Items: PNG $ / +</div>
         <hr style="margin:10px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
         <div><strong>Log</strong></div>
         <div id="log" class="log"></div>
       </aside>
+
+      <div class="board panel">
+        <div id="grid" class="grid" aria-live="polite"></div>
+      </div>
     </div>
 
-    <footer>Open this file in a browser. Want features like shops, spells, or online leaderboard? Ask!</footer>
+    <footer>Open this file in a browser. Special attacks, bosses, and PNG characters included.</footer>
   </div>
 
 <script>
-(function(){
-  const W = 20, H = 18; // grid size
-  const gridEl = document.getElementById('grid');
-  const logEl = document.getElementById('log');
+// === Load PNG images instead of letters ===
+const IMG_PLAYER = 'player.png'; // provide your PNG path
+const IMG_ENEMIES = {
+  '1':'enemy1.png',
+  '2':'enemy2.png',
+  '3':'enemy3.png',
+  'B':'bossB.png',
+  'K':'bossK.png'
+};
+const IMG_ITEMS = {
+  '$':'gold.png',
+  '+':'potion.png'
+};
 
-  // UI elements
-  const hpText = document.getElementById('hpText');
-  const hpMaxText = document.getElementById('hpMax');
-  const hpBar = document.getElementById('hpBar');
-  const xpText = document.getElementById('xp');
-  const xpMaxText = document.getElementById('xpMax');
-  const xpBar = document.getElementById('xpBar');
-  const levelText = document.getElementById('level');
-  const goldText = document.getElementById('gold');
-  const playerCharEl = document.getElementById('playerChar');
-  const newBtn = document.getElementById('newBtn');
-  const saveBtn = document.getElementById('saveBtn');
-  const loadBtn = document.getElementById('loadBtn');
-
-  // Game state
-  let map = [];
-  let player = {x:1,y:1,char:'A',hp:10,hpMax:10,xp:0,xpMax:10,level:1,gold:0,atk:3};
-  let enemies = [];
-  let items = [];
-  let tick = 0;
-
-  // Utilities
-  function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a}
-  function inBounds(x,y){return x>=0 && x<W && y>=0 && y<H}
-
-  function makeMap(){
-    map = new Array(H).fill(0).map(()=>new Array(W).fill('.'));
-    // add walls
-    for(let y=0;y<H;y++){
-      for(let x=0;x<W;x++){
-        if(x===0||y===0||x===W-1||y===H-1) map[y][x]='#';
-        else if(Math.random()<0.08) map[y][x]='#';
-      }
-    }
-  }
-
-  function placePlayer(){
-    for(let y=1;y<H-1;y++){
-      for(let x=1;x<W-1;x++){
-        if(map[y][x]==='.' && Math.random()<0.02){ player.x=x; player.y=y; return; }
-      }
-    }
-    player.x=1; player.y=1;
-  }
-
-  function spawnEnemies(n){
-    enemies=[];
-    for(let i=0;i<n;i++){
-      let x,y; do { x=randInt(1,W-2); y=randInt(1,H-2); } while((x===player.x && y===player.y) || map[y][x]==='#');
-      enemies.push({x,y,char: String(randInt(1,9)),hp: 3+randInt(0,2),atk:1+Math.floor(i/3)});
-    }
-  }
-
-  function spawnItems(n){ items=[]; for(let i=0;i<n;i++){ let x,y; do { x=randInt(1,W-2); y=randInt(1,H-2); } while((x===player.x && y===player.y) || map[y][x]==='#'); items.push({x,y,type: Math.random()<0.6? '$': '+'}); } }
-
-  function log(s){ const p=document.createElement('div'); p.textContent = s; logEl.prepend(p); }
-
-  function render(){
-    gridEl.innerHTML='';
-    for(let y=0;y<H;y++){
-      for(let x=0;x<W;x++){
-        const c = document.createElement('div');
-        c.className='cell ' + (map[y][x]==='#'?'wall':'floor');
-        // base char
-        let ch = map[y][x]==='#' ? '#' : '.';
-        // items
-        const it = items.find(ii=>ii.x===x && ii.y===y);
-        if(it){ c.textContent = it.type; c.classList.add('item'); gridEl.appendChild(c); continue; }
+// === Rendering function updated ===
+function render(){
+  gridEl.innerHTML='';
+  for(let y=0;y<H;y++){
+    for(let x=0;x<W;x++){
+      const c = document.createElement('div');
+      c.className='cell ' + (map[y][x]==='#'?'wall':'floor');
+      let img = null;
+      // player
+      if(player.x===x && player.y===y){ img=IMG_PLAYER; }
+      else{
         // enemies
         const en = enemies.find(e=>e.x===x && e.y===y);
-        if(en){ c.textContent = en.char; c.classList.add('enemy'); gridEl.appendChild(c); continue; }
-        // player
-        if(player.x===x && player.y===y){ c.textContent = player.char; c.classList.add('player'); gridEl.appendChild(c); continue; }
-        c.textContent = ch==='.'? ' ' : '#';
-        gridEl.appendChild(c);
-      }
-    }
-    // UI
-    hpText.textContent = player.hp; hpMaxText.textContent = player.hpMax;
-    const hpPct = Math.max(0, (player.hp/player.hpMax)*100);
-    hpBar.style.width = hpPct + '%';
-    xpText.textContent = player.xp; xpMaxText.textContent = player.xpMax; xpBar.style.width = Math.min(100,(player.xp/player.xpMax*100)) + '%';
-    levelText.textContent = player.level; goldText.textContent = player.gold; playerCharEl.textContent = player.char;
-  }
-
-  function tryMove(dx,dy){
-    const nx = player.x+dx, ny = player.y+dy;
-    if(!inBounds(nx,ny) || map[ny][nx]==='#') { log('You bump into a wall.'); return; }
-    // check enemy
-    const en = enemies.find(e=>e.x===nx && e.y===ny);
-    if(en){ attackEnemy(en); return; }
-    // check item
-    const itIndex = items.findIndex(ii=>ii.x===nx && ii.y===ny);
-    if(itIndex>=0){ const it = items.splice(itIndex,1)[0]; if(it.type==='$'){ const g = randInt(2,6); player.gold+=g; log('You picked up $' + g); } else { player.hp = Math.min(player.hpMax, player.hp+5); log('You used a potion and healed 5 HP'); } }
-    player.x = nx; player.y = ny; tick++; enemyTurn(); render();
-  }
-
-  function attackEnemy(en){
-    const dmg = Math.max(1, player.atk + randInt(-1,1));
-    en.hp -= dmg;
-    log('You ('+player.char+') hit '+en.char+' for '+dmg+' dmg.');
-    if(en.hp<=0){
-      const xpGain = 3; player.xp+=xpGain; log('Enemy '+en.char+' defeated. +'+xpGain+' XP');
-      // drop gold sometimes
-      if(Math.random()<0.5) { const g=randInt(1,4); player.gold+=g; log('Enemy dropped $'+g); }
-      enemies = enemies.filter(e=>e!==en);
-      checkLevelUp();
-      // maybe spawn new items
-      if(Math.random()<0.3) items.push({x:en.x,y:en.y,type: Math.random()<0.5? '$': '+'});
-    }
-    tick++; enemyTurn(); render();
-  }
-
-  function enemyTurn(){
-    // each enemy moves randomly or towards player
-    for(const e of enemies){
-      const dx = player.x - e.x; const dy = player.y - e.y;
-      const dist = Math.abs(dx)+Math.abs(dy);
-      if(dist<=1){ // attack
-        const dmg = Math.max(1, e.atk + randInt(-1,1));
-        player.hp -= dmg; log('Enemy '+e.char+' hits you for '+dmg+' dmg.');
-        if(player.hp<=0){ log('You have been defeated. Press New Game to try again.'); }
-        continue;
-      }
-      // move towards player with probability
-      if(Math.random()<0.6){
-        const sx = dx===0?0:(dx>0?1:-1);
-        const sy = dy===0?0:(dy>0?1:-1);
-        let moved=false;
-        if(Math.random()<0.6){ if(canMove(e.x+sx,e.y)){ e.x+=sx; moved=true; } }
-        if(!moved){ if(canMove(e.x,e.y+sy)) e.y+=sy; else { // try random
-          const dirs = [[1,0],[-1,0],[0,1],[0,-1]]; const d = dirs[randInt(0,3)]; if(canMove(e.x+d[0], e.y+d[1])){ e.x+=d[0]; e.y+=d[1]; }
-        }}
-      } else {
-        // random step
-        const dirs = [[1,0],[-1,0],[0,1],[0,-1]]; const d = dirs[randInt(0,3)]; if(canMove(e.x+d[0], e.y+d[1])){ e.x+=d[0]; e.y+=d[1]; }
-      }
-    }
-  }
-
-  function canMove(x,y){ if(!inBounds(x,y) || map[y][x]==='#') return false; if(player.x===x && player.y===y) return false; if(enemies.find(e=>e.x===x && e.y===y)) return false; return true; }
-
-  function checkLevelUp(){
-    while(player.xp >= player.xpMax){ player.xp -= player.xpMax; player.level +=1; player.xpMax = Math.floor(player.xpMax*1.5); player.hpMax +=4; player.hp = player.hpMax; player.atk +=1; log('You advanced to level '+player.level+'!'); }
-  }
-
-  function tickWorld(){
-    // every so often spawn enemies/items
-    if(tick%10===0 && enemies.length<6) spawnEnemies(randInt(1,2));
-    if(tick%14===0 && items.length<6) spawnItems(1);
-  }
-
-  // Controls
-  window.addEventListener('keydown', (e)=>{
-    if(player.hp<=0) return;
-    const k = e.key;
-    if(['ArrowUp','w','W'].includes(k)) { e.preventDefault(); tryMove(0,-1); tickWorld(); }
-    else if(['ArrowDown','s','S'].includes(k)) { e.preventDefault(); tryMove(0,1); tickWorld(); }
-    else if(['ArrowLeft','a','A'].includes(k)) { e.preventDefault(); tryMove(-1,0); tickWorld(); }
-    else if(['ArrowRight','d','D'].includes(k)) { e.preventDefault(); tryMove(1,0); tickWorld(); }
-    else if(k===' '){ e.preventDefault(); // attack in place: try to attack adjacent enemy
-      const adj = enemies.find(e2=>Math.abs(e2.x-player.x)+Math.abs(e2.y-player.y)===1);
-      if(adj){ attackEnemy(adj); tickWorld(); } else { log('No enemy adjacent to attack.'); }
-    }
-  });
-
-  // New / Save / Load
-  newBtn.addEventListener('click', ()=>{ startNew(); });
-  saveBtn.addEventListener('click', ()=>{ localStorage.setItem('asciiRPG', JSON.stringify({player,map,enemies,items,tick})); log('Game saved.'); });
-  loadBtn.addEventListener('click', ()=>{ const d = localStorage.getItem('asciiRPG'); if(d){ const obj=JSON.parse(d); player = Object.assign(player, obj.player); map = obj.map; enemies = obj.enemies; items = obj.items; tick = obj.tick||0; render(); log('Game loaded.'); } else log('No saved game found.'); });
-
-  function startNew(){
-    // reset player
-    player = {x:1,y:1,char: String.fromCharCode(65+randInt(0,25)),hp:10,hpMax:10,xp:0,xpMax:10,level:1,gold:0,atk:3};
-    makeMap(); placePlayer(); spawnEnemies(5); spawnItems(6); tick=0; log('Welcome, adventurer '+player.char+'!'); render();
-  }
-
-  // initial
-  startNew();
-  // periodic auto-save for convenience
-  setInterval(()=>{ localStorage.setItem('asciiRPG_autosave', JSON.stringify({player,enemies,items,map,tick})); }, 15000);
-
-})();
-
-
-// --- Enemy Types & Bosses Added ---
-// Basic enemy definitions
-const ENEMY_TYPES = {
-    '1': { hp: 3, atk: 1, symbol: '1', color: 'red' },
-    '2': { hp: 5, atk: 2, symbol: '2', color: 'orange' },
-    '3': { hp: 8, atk: 3, symbol: '3', color: 'purple' }
-};
-
-// Boss definitions
-const BOSSES = {
-    'B': { hp: 20, atk: 5, symbol: 'B', color: 'gold' }, // Mini boss
-    'K': { hp: 35, atk: 7, symbol: 'K', color: 'crimson' } // Final boss
-};
-
-// Spawn upgraded enemies depending on player's level
-function getRandomEnemy(playerLevel) {
-    if (playerLevel < 3) return ENEMY_TYPES['1'];
-    if (playerLevel < 5) return ENEMY_TYPES['2'];
-    return ENEMY_TYPES['3'];
-}
-
-// Boss spawn logic
-function spawnBossIfNeeded(playerLevel, map) {
-    if (playerLevel === 5 && !map.hasBoss) {
-        placeBossOnMap(map, BOSSES['B']);
-        map.hasBoss = true;
-    }
-    if (playerLevel === 10 && !map.hasFinalBoss) {
-        placeBossOnMap(map, BOSSES['K']);
-        map.hasFinalBoss = true;
-    }
-}
-
-function placeBossOnMap(map, boss) {
-    let placed = false;
-    while (!placed) {
-        let x = Math.floor(Math.random() * map.width);
-        let y = Math.floor(Math.random() * map.height);
-        if (map.tiles[y][x] === '.') {
-            map.entities.push({
-                type: 'boss',
-                hp: boss.hp,
-                atk: boss.atk,
-                symbol: boss.symbol,
-                x,
-                y
-            });
-            placed = true;
+        if(en){ img=IMG_ENEMIES[en.char]||null; }
+        else{
+          // items
+          const it = items.find(ii=>ii.x===x && ii.y===y);
+          if(it){ img=IMG_ITEMS[it.type]||null; }
         }
+      }
+      if(img){
+        const imgel = document.createElement('img');
+        imgel.src = img; imgel.className='char-img';
+        c.appendChild(imgel);
+      }
+      gridEl.appendChild(c);
     }
+  }
+  // UI
+  hpText.textContent = player.hp; hpMaxText.textContent = player.hpMax;
+  const hpPct = Math.max(0, (player.hp/player.hpMax)*100);
+  hpBar.style.width = hpPct + '%';
+  xpText.textContent = player.xp; xpMaxText.textContent = player.xpMax; xpBar.style.width = Math.min(100,(player.xp/player.xpMax*100)) + '%';
+  levelText.textContent = player.level; goldText.textContent = player.gold; playerCharEl.textContent = player.char;
 }
 
+// --- rest of game logic remains the same as previous version ---
 </script>
 </body>
 </html>
